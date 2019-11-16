@@ -1,6 +1,6 @@
 {
-    "name": "node-red-contrib-tensorflowjs",
-    "version": "0.0.2",
+    "name": "node-red-contrib-tfjs",
+    "version": "0.0.3",
     "description": "A Node-RED node that provides a function like node with tensorflowjs and some other useful libraries built in",
     "dependencies": {
         "@tensorflow/tfjs-node": "*",
@@ -8,7 +8,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/dceejay/nrTensorflowjs/tree/master/"
+        "url": "https://github.com/dceejay/tfjs/tree/master/"
     },
     "license": "Apache-2.0",
     "keywords": [
