@@ -70,6 +70,7 @@ module.exports = function (RED) {
         var cocoSsd = require('@tensorflow-models/coco-ssd');
         
         RED.nodes.createNode(this, n);
+        this.scoreThreshold = n.scoreThreshould;
         var node = this;
 
         async function loadModel() {
@@ -85,6 +86,13 @@ module.exports = function (RED) {
                 msg.payload = await node.model.detect(img);
                 msg.shape = img.shape;
                 msg.classes = {};
+                msg.scoreThreshold = msg.scoreThreshold || node.scoreThreshold || 0.5;
+                for (var i=0; i<msg.payload.length; i++) {
+                    if (msg.payload[i].score < msg.scoreThreshold) {
+                        msg.payload.splice(i,1);
+                        i = i - 1;
+                    }
+                }
                 for (var i=0; i<msg.payload.length; i++) {
                     msg.classes[msg.payload[i].class] = (msg.classes[msg.payload[i].class] || 0 ) + 1;
                 }
@@ -106,4 +114,63 @@ module.exports = function (RED) {
         });
     }
     RED.nodes.registerType("tensorflowCoco", TensorFlowCoCo);
+
+
+   
+    function TensorFlowPose(n) {
+        var fs = require('fs');
+        var tf = require('@tensorflow/tfjs-node');
+        var posenet = require('@tensorflow-models/posenet');
+        //import * as posenet from '@tensorflow-models/posenet';
+        
+        RED.nodes.createNode(this, n);
+        this.scoreThreshold = n.scoreThreshould;
+        this.maxDetections = n.maxDetections;
+        var node = this;
+
+        async function loadModel() {
+            node.model = await posenet.load();
+            node.ready = true;
+            node.status({fill:'green', shape:'dot', text:'Model ready'});
+        }
+        node.status({fill:'yellow', shape:'ring', text:'Loading model...'});
+        loadModel();
+
+        node.on('input', function (msg) {
+            async function estimateMultiplePosesOnImage(image) {
+                msg.scoreThreshold = msg.scoreThreshold || node.scoreThreshold || 0.5;
+                msg.maxDetections = msg.maxDetections || node.maxDetections || 4;
+                const poses = await node.model.estimateMultiplePoses(image, {
+                    flipHorizontal: false,
+                    maxDetections: msg.maxDetections,
+                    scoreThreshold: msg.scoreThreshold,
+                    nmsRadius: 20
+                });
+                msg.payload = poses;
+                for (var i=0; i<msg.payload.length; i++) {
+                    if (msg.payload[i].score < msg.scoreThreshold) {
+                        msg.payload.splice(i,1);
+                        i = i - 1;
+                    }
+                }
+                msg.shape = image.shape;
+                msg.classes = {person:msg.payload.length};
+                node.send(msg);
+            }
+            try {
+                if (node.ready) {
+                    var p = msg.payload;
+                    if (typeof p === "string") { p = fs.readFileSync(p); }
+                    estimateMultiplePosesOnImage(tf.node.decodeImage(p));
+                }
+            } catch (error) {
+                node.error(error, msg);
+            }
+        });
+
+        node.on("close", function () {
+            node.status({});
+        });
+    }
+    RED.nodes.registerType("tensorflowPose", TensorFlowPose);
 };

@@ -4,7 +4,8 @@
     "description": "A Node-RED node that provides a function like node with tensorflowjs and some other useful libraries built in",
     "dependencies": {
         "@tensorflow/tfjs-node": "*",
-        "@tensorflow-models/coco-ssd": "*"
+        "@tensorflow-models/coco-ssd": "*",
+        "@tensorflow-models/posenet": "*"
     },
     "repository": {
         "type": "git",
