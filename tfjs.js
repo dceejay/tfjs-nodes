@@ -71,6 +71,7 @@ module.exports = function (RED) {
         
         RED.nodes.createNode(this, n);
         this.scoreThreshold = n.scoreThreshould;
+        this.maxDetections = n.maxDetections;
         var node = this;
 
         async function loadModel() {
@@ -83,10 +84,12 @@ module.exports = function (RED) {
 
         node.on('input', function (msg) {
             async function reco(img) {
-                msg.payload = await node.model.detect(img);
+                msg.maxDetections = msg.maxDetections || node.maxDetections || 20;
+                msg.payload = await node.model.detect(img, msg.maxDetections);
                 msg.shape = img.shape;
                 msg.classes = {};
                 msg.scoreThreshold = msg.scoreThreshold || node.scoreThreshold || 0.5;
+                
                 for (var i=0; i<msg.payload.length; i++) {
                     if (msg.payload[i].score < msg.scoreThreshold) {
                         msg.payload.splice(i,1);
