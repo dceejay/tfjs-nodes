@@ -66,6 +66,8 @@ module.exports = function (RED) {
 
     function TensorFlowCoCo(n) {
         var fs = require('fs');
+        var express = require("express");
+        var compression = require("compression");
         var tf = require('@tensorflow/tfjs-node');
         var cocoSsd = require('@tensorflow-models/coco-ssd');
         
@@ -74,8 +76,11 @@ module.exports = function (RED) {
         this.maxDetections = n.maxDetections;
         var node = this;
 
+        RED.httpNode.use(compression());
+        RED.httpNode.use('/coco', express.static(__dirname + '/models/coco-ssd'));
+
         async function loadModel() {
-            node.model = await cocoSsd.load();
+            node.model = await cocoSsd.load({modelUrl: "http://localhost:1880/coco/model.json"});
             node.ready = true;
             node.status({fill:'green', shape:'dot', text:'Model ready'});
         }
