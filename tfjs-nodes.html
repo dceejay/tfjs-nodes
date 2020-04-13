@@ -26,18 +26,14 @@
         },
         inputs: 1,
         outputs: 1,
-        paletteLabel: "tf predict",
-        color: "#EF9730",
-        icon: "tfjs.png",
-        label: function() {
-            return this.name || "tf predict";
-        }
+        color: '#ED782F',
+        icon: "tensorflow_logo.png",
+        label: function() { return this.name || "tf predict"; },
+        paletteLabel: "tf predict"
     });
 </script>
 
-
-
-<script type="text/html" data-template-name="tensorflowCoco">
+<script type="text/html" data-template-name="tensorflowCocoSsd">
     <div class="form-row">
         <label for="node-input-scoreThreshold"><i class="fa fa-tag"></i> Threshold</label>
         <input type="text" id="node-input-scoreThreshold" placeholder="e.g. 0 - 1">
@@ -48,7 +44,7 @@
     </div>
 </script>
 
-<script type="text/html" data-help-name="tensorflowCoco">
+<script type="text/html" data-help-name="tensorflowCocoSsd">
    <p>A <a href="https://www.tensorflow.org/js" target = "_new">TensorFlow.js</a> node to run CoCo simple object recognition.</p>
    <h3>Inputs</h3>
     <dl class="message-properties">
@@ -78,7 +74,7 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('tensorflowCoco', {
+    RED.nodes.registerType('tensorflowCocoSsd', {
         category: 'analysis-function',
         defaults: {
             name: { value: "" },
@@ -87,18 +83,14 @@
         },
         inputs: 1,
         outputs: 1,
-        paletteLabel: "tf coco ssd",
-        color: "#EF9730",
-        icon: "tfjs.png",
-        label: function() {
-            return this.name || "tf coco ssd";
-        }
+        color: '#ED782F',
+        icon: "tensorflow_logo.png",
+        label: function() { return this.name || "tf coco ssd"; },
+        paletteLabel: "tf coco ssd"
     });
 </script>
 
-
-
-<script type="text/html" data-template-name="tensorflowPose">
+<script type="text/html" data-template-name="tensorflowPosenet">
     <div class="form-row">
         <label for="node-input-scoreThreshold"><i class="fa fa-tag"></i> Threshold</label>
         <input type="text" id="node-input-scoreThreshold" placeholder="e.g. 0 - 1">
@@ -113,7 +105,7 @@
     </div>
 </script>
 
-<script type="text/html" data-help-name="tensorflowPose">
+<script type="text/html" data-help-name="tensorflowPosenet">
    <p>A <a href="https://www.tensorflow.org/js" target = "_new">TensorFlow.js</a> node to run Pose Estimator against an image.</p>
    <h3>Inputs</h3>
     <dl class="message-properties">
@@ -142,7 +134,7 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('tensorflowPose', {
+    RED.nodes.registerType('tensorflowPosenet', {
         category: 'analysis-function',
         defaults: {
             name: { value: "" },
@@ -152,11 +144,55 @@
         },
         inputs: 1,
         outputs: 1,
-        paletteLabel: "tf pose",
-        color: "#EF9730",
-        icon: "tfjs.png",
-        label: function() {
-            return this.name || "tf pose estimator";
-        }
+        color: '#ED782F',
+        icon: "tensorflow_logo.png",
+        label: function() { return this.name || "tf posenet"; }, 
+        paletteLabel: "tf posenet",
+    });
+</script>
+
+<script type="text/html" data-help-name="tensorflowMobilenet">
+    <p>Help text node to load classificaion models in Tensorflow.
+    </p>
+</script>
+  
+<script type="text/html" data-template-name="tensorflowMobilenet">
+    <!-- Set Model URL -->
+    <div class="form-row">
+        <label for="node-input-modelUrl"><i class="fa fa-globe"></i> Model URL</label>
+        <input type="text" id="node-input-modelUrl" placeholder="Set a model url">
+    </div>
+    <!-- Set Classification Threshold -->
+    <div class="form-row">
+        <label for="node-input-threshold"><i class="fa fa-signal"></i> Threshold</label>
+        <input type="text" id="node-input-threshold" placeholder="e.g. 0 - 1">
+    </div>
+    <!-- Save Image Checkbox -->
+    <div class="form-row">
+        <label for="node-input-saveImage"><i class="fa fa-picture-o"></i> Image</label>
+        <input type="checkbox" id="node-input-saveImage" style="display:inline-block; width:20px; vertical-align:baseline;"> save original image in <code>msg.image</code>.
+    </div>
+    <!-- Set the Name of the Node -->
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('tensorflowMobilenet',{
+        category: 'analysis-function',
+        color: '#ED782F',
+        defaults: {
+            name: {value: ""},
+            modelUrl: {value: undefined, required: true},
+            threshold: {value: 0.5},
+            saveImage: {value: false}
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "tensorflow_logo.png",
+        label: function() { return this.name || "tf mobilenet"; },
+        paletteLabel: "tf mobilenet"
     });
 </script>
