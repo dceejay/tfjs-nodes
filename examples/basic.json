@@ -1,0 +1,182 @@
+[
+    {
+        "id": "bd5aeb08.5fd6a8",
+        "type": "debug",
+        "z": "5d04168c.77247",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 690,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "682b3c75.350e04",
+        "type": "http request",
+        "z": "5d04168c.77247",
+        "name": "",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": false,
+        "url": "https://loremflickr.com/320/240/sport",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 270,
+        "y": 80,
+        "wires": [
+            [
+                "7020a565.af0c3c",
+                "e234b150.04de",
+                "44e6ec12.4ed9a4",
+                "e14d3811.b01b08",
+                "ad621261.73e75"
+            ]
+        ]
+    },
+    {
+        "id": "4008baac.96d384",
+        "type": "inject",
+        "z": "5d04168c.77247",
+        "name": "",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "682b3c75.350e04"
+            ]
+        ]
+    },
+    {
+        "id": "74e6fd64.df7a04",
+        "type": "debug",
+        "z": "5d04168c.77247",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 690,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "d6513c11.e4b3a",
+        "type": "debug",
+        "z": "5d04168c.77247",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 690,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "c86187f9.430218",
+        "type": "debug",
+        "z": "5d04168c.77247",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 690,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "7020a565.af0c3c",
+        "type": "image",
+        "z": "5d04168c.77247",
+        "name": "",
+        "width": 160,
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": true,
+        "x": 500,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "e234b150.04de",
+        "type": "tensorflowPredict",
+        "z": "5d04168c.77247",
+        "name": "",
+        "modelUrl": "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
+        "x": 480,
+        "y": 80,
+        "wires": [
+            [
+                "c86187f9.430218"
+            ]
+        ]
+    },
+    {
+        "id": "ad621261.73e75",
+        "type": "tensorflowPosenet",
+        "z": "5d04168c.77247",
+        "name": "",
+        "model": "",
+        "threshold": 0.5,
+        "maxDetections": 4,
+        "x": 480,
+        "y": 260,
+        "wires": [
+            [
+                "74e6fd64.df7a04"
+            ]
+        ]
+    },
+    {
+        "id": "e14d3811.b01b08",
+        "type": "tensorflowCocoSsd",
+        "z": "5d04168c.77247",
+        "name": "",
+        "model": "",
+        "threshold": 0.5,
+        "maxDetections": 4,
+        "x": 490,
+        "y": 200,
+        "wires": [
+            [
+                "bd5aeb08.5fd6a8"
+            ]
+        ]
+    },
+    {
+        "id": "44e6ec12.4ed9a4",
+        "type": "tensorflowMobilenet",
+        "z": "5d04168c.77247",
+        "name": "",
+        "modelUrl": "https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json",
+        "threshold": "",
+        "x": 490,
+        "y": 140,
+        "wires": [
+            [
+                "d6513c11.e4b3a"
+            ]
+        ]
+    }
+]

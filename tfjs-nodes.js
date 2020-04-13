@@ -29,18 +29,15 @@ module.exports = function (RED) {
     }
   }
 
-  function inputNodeHandler (node, msg) {
+  async function inputNodeHandler (node, msg) {
     try {
       if (node.ready) {
         var image = msg.payload
         // If it's a string assume it's a filename
         if (typeof image === 'string') { image = fs.readFileSync(image) }
-        node.inferImage(image).then(
-          function (results) {
-            msg.payload = results
-            setNodeStatus(node, 'modelReady')
-          }
-        )
+        var results = await node.inferImage(image)
+        setNodeStatus(node, 'modelReady')
+        return results
       } else {
         node.error('model is not ready')
       }
@@ -53,7 +50,8 @@ module.exports = function (RED) {
   // Specific implementations for each of the nodes
   function tensorflowPredict (config) {
     RED.nodes.createNode(this, config)
-    this.modelUrl = config.modelUrl || 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
+    this.modelUrl = config.modelUrl
+    this.threshold = config.threshold
 
     var node = this
 
@@ -86,15 +84,20 @@ module.exports = function (RED) {
       tensorImage = normalized.reshape(node.shape)
 
       var tensorResult = node.model.predict(tensorImage)
-      // console.log(results.argMax(1).dataSync()[0])
-      var result = Array.from(tensorResult.dataSync())
-      return result
+      var argMax = tensorResult.argMax(1).dataSync()[0]
+      var results = Array.from(tensorResult.dataSync())
+      results = [results, argMax]
+      return results
     }
 
     loadModel(node.modelUrl)
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg)
+      inputNodeHandler(node, msg).then(
+        function (results) {
+          msg.payload = results[0]
+          msg.argMax = results[1]
+        })
       node.send(msg)
     })
 
@@ -105,7 +108,7 @@ module.exports = function (RED) {
     var mobilenet = require('@tensorflow-models/mobilenet')
 
     RED.nodes.createNode(this, config)
-    this.modelUrl = config.modelUrl || 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
+    this.modelUrl = config.modelUrl
     this.threshold = config.threshold
 
     var node = this
@@ -126,13 +129,17 @@ module.exports = function (RED) {
       setNodeStatus(node, 'infering')
       var tensorImage = tf.node.decodeImage(image)
       var results = await node.model.classify(tensorImage)
+      results = [results]
       return results
     }
 
     loadModel(node.modelUrl)
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg)
+      inputNodeHandler(node, msg).then(
+        function (results) {
+          msg.payload = results[0]
+        })
       node.send(msg)
     })
 
@@ -167,19 +174,25 @@ module.exports = function (RED) {
       setNodeStatus(node, 'infering')
       var tensorImage = tf.node.decodeImage(image)
       var results = await node.model.detect(tensorImage, node.maxDetections)
+      var classes = {}
 
       for (var i = 0; i < results.length; i++) {
         if (results[i].score < node.threshold) {
           results.splice(i, 1)
           i = i - 1
         }
-        // msg.classes[msg.payload[i].class] = (msg.classes[msg.payload[i].class] || 0) + 1
+        classes[results[i].class] = (classes[results[i].class] || 0) + 1
       }
+      results = [results, classes]
       return results
     }
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg)
+      inputNodeHandler(node, msg).then(
+        function (results) {
+          msg.payload = results[0]
+          msg.classes = results[1]
+        })
       node.send(msg)
     })
 
@@ -191,8 +204,8 @@ module.exports = function (RED) {
 
     RED.nodes.createNode(this, config)
     this.modelUrl = config.modelUrl
-    this.scoreThreshold = config.scoreThreshold || 0.5
-    this.maxDetections = config.maxDetections || 4
+    this.threshold = config.threshold
+    this.maxDetections = config.maxDetections
 
     var node = this
 
@@ -214,23 +227,28 @@ module.exports = function (RED) {
       var poses = await node.model.estimateMultiplePoses(tensorImage, {
         flipHorizontal: false,
         maxDetections: node.maxDetections,
-        scoreThreshold: node.scoreThreshold,
+        scoreThreshold: node.threshold,
         nmsRadius: 20
       })
       var results = poses
       for (var i = 0; i < poses.length; i++) {
-        if (results[i].score < node.scoreThreshold) {
+        if (results[i].score < node.threshold) {
           results.splice(i, 1)
           i = i - 1
         }
       }
+      results = [results]
       return results
     }
 
     loadModel(node.modelUrl)
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg)
+      inputNodeHandler(node, msg).then(
+        function (results) {
+          msg.payload = results[0]
+          msg.classes = { person: msg.payload.length }
+        })
       node.send(msg)
     })
 
