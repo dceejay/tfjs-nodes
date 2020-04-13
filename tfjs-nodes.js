@@ -33,6 +33,7 @@ module.exports = function (RED) {
     try {
       if (node.ready) {
         var image = msg.payload
+        // If it's a string assume it's a filename
         if (typeof image === 'string') { image = fs.readFileSync(image) }
         node.inferImage(image).then(
           function (results) {
@@ -52,55 +53,49 @@ module.exports = function (RED) {
   // Specific implementations for each of the nodes
   function tensorflowPredict (config) {
     RED.nodes.createNode(this, config)
-    this.modelUrl = config.model
-    // this.modelfile = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json';
+    this.modelUrl = config.modelUrl || 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
+
     var node = this
 
     async function loadModel (modelUrl) {
       setNodeStatus(node, 'modelLoading')
-      await tf.loadLayersModel(modelUrl).then(function (model) {
-        var shape = model.inputs[0].shape
+      try {
+        node.model = await tf.loadLayersModel(modelUrl)
+        var shape = node.model.inputs[0].shape
         shape.shift()
         // node.log('input model shape: ' + shape)
         shape.unshift(1)
-        model.predict(tf.zeros(shape)).dispose()
-        node.model = model
+        node.model.predict(tf.zeros(shape)).dispose()
         node.shape = shape
         node.ready = true
         setNodeStatus(node, 'modelReady')
-      })
+      } catch (error) {
+        setNodeStatus(node, 'modelError')
+        node.error(error)
+      }
     }
 
-    async function imgToTensor (p) {
-      // if it's a string assume it's a filename
-      if (typeof p === 'string') { p = fs.readFileSync(p) }
-      const img = tf.node.decodeImage(p, node.shape[3])
-      // rescale the image to fit the wanted shape
-      const scaled = tf.image.resizeBilinear(img, [node.shape[1], node.shape[2]], true)
-      const offset = tf.scalar(127.5)
+    node.inferImage = async function (image) {
+      setNodeStatus(node, 'infering')
+      var tensorImage = tf.node.decodeImage(image, node.shape[3])
+      // Rescale the image to fit the wanted shape
+      var scaledTensorImage = tf.image.resizeBilinear(tensorImage, [node.shape[1], node.shape[2]], true)
+      var offset = tf.scalar(127.5)
       // Normalize the image from [0, 255] to [-1, 1].
-      const normalized = scaled.sub(offset).div(offset)
-      // extend the tensor to 4d
-      return normalized.reshape(node.shape)
+      var normalized = scaledTensorImage.sub(offset).div(offset)
+      tensorImage = normalized.reshape(node.shape)
+
+      var tensorResult = node.model.predict(tensorImage)
+      // console.log(results.argMax(1).dataSync()[0])
+      var result = Array.from(tensorResult.dataSync())
+      return result
     }
 
     loadModel(node.modelUrl)
 
     node.on('input', function (msg) {
-      msg.inputShape = node.shape
-      try {
-        imgToTensor(msg.payload)
-          .then(
-            function (tensorImage) {
-              var tensorResult = node.model.predict(tensorImage)
-              msg.maxIndex = tensorResult.argMax(1).dataSync()[0]
-              msg.payload = Array.from(tensorResult.dataSync())
-              node.send(msg)
-            }
-          )
-      } catch (error) {
-        node.error(error, msg)
-      }
+      inputNodeHandler(node, msg)
+      node.send(msg)
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })
@@ -112,7 +107,6 @@ module.exports = function (RED) {
     RED.nodes.createNode(this, config)
     this.modelUrl = config.modelUrl || 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
     this.threshold = config.threshold
-    this.saveImage = config.saveImage || false
 
     var node = this
 
@@ -147,113 +141,97 @@ module.exports = function (RED) {
 
   function tensorflowCocoSsd (config) {
     var cocoSsd = require('@tensorflow-models/coco-ssd')
-    var express = require('express')
-    var compression = require('compression')
 
     RED.nodes.createNode(this, config)
-    this.scoreThreshold = config.scoreThreshould
+    this.modelUrl = config.modelUrl
+    this.threshold = config.threshold
     this.maxDetections = config.maxDetections
 
     var node = this
 
-    RED.httpNode.use(compression())
-    RED.httpNode.use('/coco', express.static(__dirname + '/models/coco-ssd'))
-
-    async function loadModel () {
+    async function loadModel (modelUrl) {
       setNodeStatus(node, 'modelLoading')
-      node.model = await cocoSsd.load({ modelUrl: 'http://localhost:1880/coco/model.json' })
-      node.ready = true
-      setNodeStatus(node, 'modelReady')
+      try {
+        node.model = await cocoSsd.load()
+        node.ready = true
+        setNodeStatus(node, 'modelReady')
+      } catch (error) {
+        setNodeStatus(node, 'modelError')
+        node.error(error)
+      }
     }
 
-    loadModel()
+    loadModel(node.modelUrl)
+
+    node.inferImage = async function (image) {
+      setNodeStatus(node, 'infering')
+      var tensorImage = tf.node.decodeImage(image)
+      var results = await node.model.detect(tensorImage, node.maxDetections)
+
+      for (var i = 0; i < results.length; i++) {
+        if (results[i].score < node.threshold) {
+          results.splice(i, 1)
+          i = i - 1
+        }
+        // msg.classes[msg.payload[i].class] = (msg.classes[msg.payload[i].class] || 0) + 1
+      }
+      return results
+    }
 
     node.on('input', function (msg) {
-      async function inferTensorImage (image) {
-        setNodeStatus(node, 'infering')
-        msg.maxDetections = msg.maxDetections || node.maxDetections || 20
-        msg.payload = await node.model.detect(image, msg.maxDetections)
-        msg.shape = image.shape
-        msg.classes = {}
-        msg.scoreThreshold = msg.scoreThreshold || node.scoreThreshold || 0.5
-
-        for (var i = 0; i < msg.payload.length; i++) {
-          if (msg.payload[i].score < msg.scoreThreshold) {
-            msg.payload.splice(i, 1)
-            i = i - 1
-          }
-          msg.classes[msg.payload[i].class] = (msg.classes[msg.payload[i].class] || 0) + 1
-        }
-
-        node.send(msg)
-        setNodeStatus(node, 'modelReady')
-      }
-      try {
-        if (node.ready) {
-          var image = msg.payload
-          if (typeof image === 'string') { image = fs.readFileSync(image) }
-          inferTensorImage(tf.node.decodeImage(image))
-        }
-      } catch (error) {
-        node.error(error, msg)
-      }
+      inputNodeHandler(node, msg)
+      node.send(msg)
     })
 
-    node.on('close', function () {
-      setNodeStatus(node, 'close')
-    })
+    node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
   function tensorflowPosenet (config) {
     var posenet = require('@tensorflow-models/posenet')
 
     RED.nodes.createNode(this, config)
-    this.scoreThreshold = config.scoreThreshould
-    this.maxDetections = config.maxDetections
+    this.modelUrl = config.modelUrl
+    this.scoreThreshold = config.scoreThreshold || 0.5
+    this.maxDetections = config.maxDetections || 4
 
     var node = this
 
-    async function loadModel () {
+    async function loadModel (modelUrl) {
       setNodeStatus(node, 'modelLoading')
-      node.model = await posenet.load()
-      node.ready = true
-      setNodeStatus(node, 'modelReady')
+      try {
+        node.model = await posenet.load()
+        node.ready = true
+        setNodeStatus(node, 'modelReady')
+      } catch (error) {
+        setNodeStatus(node, 'modelError')
+        node.error(error)
+      }
     }
 
-    loadModel()
+    node.inferImage = async function (image) {
+      setNodeStatus(node, 'infering')
+      var tensorImage = tf.node.decodeImage(image)
+      var poses = await node.model.estimateMultiplePoses(tensorImage, {
+        flipHorizontal: false,
+        maxDetections: node.maxDetections,
+        scoreThreshold: node.scoreThreshold,
+        nmsRadius: 20
+      })
+      var results = poses
+      for (var i = 0; i < poses.length; i++) {
+        if (results[i].score < node.scoreThreshold) {
+          results.splice(i, 1)
+          i = i - 1
+        }
+      }
+      return results
+    }
+
+    loadModel(node.modelUrl)
 
     node.on('input', function (msg) {
-      async function inferTensorImage (image) {
-        setNodeStatus(node, 'infering')
-        msg.scoreThreshold = msg.scoreThreshold || node.scoreThreshold || 0.5
-        msg.maxDetections = msg.maxDetections || node.maxDetections || 4
-        var poses = await node.model.estimateMultiplePoses(image, {
-          flipHorizontal: false,
-          maxDetections: msg.maxDetections,
-          scoreThreshold: msg.scoreThreshold,
-          nmsRadius: 20
-        })
-        msg.payload = poses
-        for (var i = 0; i < msg.payload.length; i++) {
-          if (msg.payload[i].score < msg.scoreThreshold) {
-            msg.payload.splice(i, 1)
-            i = i - 1
-          }
-        }
-        msg.shape = image.shape
-        msg.classes = { person: msg.payload.length }
-        node.send(msg)
-        setNodeStatus(node, 'modelReady')
-      }
-      try {
-        if (node.ready) {
-          var image = msg.payload
-          if (typeof image === 'string') { image = fs.readFileSync(image) }
-          inferTensorImage(tf.node.decodeImage(image))
-        }
-      } catch (error) {
-        node.error(error, msg)
-      }
+      inputNodeHandler(node, msg)
+      node.send(msg)
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })
