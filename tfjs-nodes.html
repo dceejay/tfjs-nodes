@@ -85,15 +85,17 @@
       <dl class="message-properties">    
         <dt>payload<span class="property-type">object | array</span></dt>
         <dd>Top-3 array with objects containing</dd>
-        <dd><ul>
-          <li><code>nameClass</code> <i>string</i></li>
-          <li><code>probability</code> <i>float</i></li>
-        </ul></dd>
+        <dd>
+          <ul>
+            <li><code>nameClass</code> <i>string</i></li>
+            <li><code>probability</code> <i>float</i></li>
+          </ul>
+        </dd>
       </dl>
     <h3>Details</h3>
-        <p>You must set the Model URL obtained from the uploaded model in the <a href="https://teachablemachine.withgoogle.com" target = "_new">Teachable Machine</a>.</p>
-        <p>You can set the <code>msg.payload</code> to be the best result as one <code>json</code> object or to be an array of all <code>json</code> results. The results will not be ordered by probability.</p>
-        <p>Probability is defined as <code>%</code> and the range goes from <code>0</code> to <code>1</code>.
+      <p>You must set the Model URL obtained from the uploaded model in the <a href="https://teachablemachine.withgoogle.com" target = "_new">Teachable Machine</a>.</p>
+      <p>You can set the <code>msg.payload</code> to be the best result as one <code>json</code> object or to be an array of all <code>json</code> results. The results will not be ordered by probability.</p>
+      <p>Probability is defined as <code>%</code> and the range goes from <code>0</code> to <code>1</code>.
 </script>
 
 <script type="text/html" data-help-name="tensorflowCocoSsd">
@@ -109,43 +111,46 @@
       <dl class="message-properties">    
         <dt>payload <span class="property-type">array</span></dt>
         <dd>an array of detected objects, containing :
-        <ul><li><code>bbox</code> array, [x, y, w, h]</li>
+          <ul>
+            <li><code>bbox</code> array, [x, y, w, h]</li>
             <li><code>class</code> string, detected object class name</li>
             <li><code>score</code> number, 0 -> 1</li>
-        </ul></dd>
+          </ul>
+        </dd>
         <dt>classes <span class="property-type">object</span></dt>
         <dd>an object with each class and their counts, e.g. <code>{cat:1, dog:2}</code>.</dd>
-    </dl>  
-    <h3>Details</h3> 
-    <p>The configured threshold can be overridden dynamically by setting the <code>msg.threshold</code> property.</p>
+      </dl>  
+<!--     <h3>Details</h3> 
+    <p>The configured threshold can be overridden dynamically by setting the <code>msg.threshold</code> property.</p> -->
 </script>
 
 <script type="text/html" data-help-name="tensorflowPosenet">
-   <p>A <a href="https://www.tensorflow.org/js" target = "_new">TensorFlow.js</a> node to run Pose Estimator against an image.</p>
-   <h3>Inputs</h3>
-    <dl class="message-properties">
+    <p>A <a href="https://www.tensorflow.org/js" target = "_new">TensorFlow.js</a> node to run Pose Estimator against an image.</p>
+    <h3>Inputs</h3>
+      <dl class="message-properties">
         <dt>payload <span class="property-type">buffer | string</span></dt>
         <dd>A binary buffer of a jpeg image, or string of a filename to load.</dd>
         <dt>scoreThreshold <span class="property-type">number</span></dt>
         <dd>Minimum threshold for a valid detection (0 - 1)</dd>
         <dt>maxDetections <span class="property-type">number</span></dt>
         <dd>Maximum number of bodies to detect. (default 4)</dd>
-    </dl>
+      </dl>
     <h3>Outputs</h3>
-    <dl class="message-properties">    
+      <dl class="message-properties">    
         <dt>payload <span class="property-type">array</span></dt>
         <dd>an array of detected objects, containing :
-        <ul><li><code>score</code> number, 0 -> 1.</li>
-            <li><code>keypoints</code> array[17] of body parts objects, including score, part, and position: x and y.</li>
-        </ul></dd>
+          <ul>
+            <li><code>score</code> number, 0 -> 1.</li>
+            <li><code>keypoints</code> array[17],  body parts objects including score, part, and position: x and y.</li>
+          </ul>
+        </dd>
         <dt>scoreThreshold <span class="property-type">number</span></dt>
         <dd>the scoreThreshold value used in this detection.</dd>
         <dt>maxDetections <span class="property-type">number</span></dt>
         <dd>the maxDetections value used in this detection.</dd>
     </dl> 
     <h3>Details</h3> 
-    <p>Both the configured scoreThreshold and maxDetections can be overridden dynamically 
-        by setting the appropriate msg property.</p>
+      <p>Both the configured threshold and maxDetections can be overridden dynamically by setting the appropriate msg property.</p>
 </script>  
 
 <!-- Node JavaScript Registration -->
