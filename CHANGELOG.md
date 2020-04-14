@@ -1,5 +1,5 @@
 # Changelog
-## [0.2.0]
+## [1.0.0]
 ### Added
  - New `tf mobilenets` node
  - Standarized node status defined globally for all nodes
@@ -8,6 +8,8 @@
  - `CHANGELOG` file
  - New contributor `Yair Bonastre` in `package.json`
  - `google` keyword to `package.json` 
+ - New `Parameters` section in configuration
+ - Added `Online` and `Local` options for all nodes (`tf coco ssd` is the only supported for now)
 
 ### Changed
  - General polish `JavaScript` code across all nodes
@@ -21,14 +23,16 @@
  - Revised information help menus 
  - Name of npm module to `node-red-contrib-tfjs-nodes` and its description
  - JavaScript file from `tfjs.js` to `tfjs-nodes.js`
+ - Set all used libraries to `const` variables
+ - `Min. Threshold` and `Max. Detections` are now selected from an easier spinner
+ - `Min. Threshold` is now defined from 0 to 100 in %
 
 ### Fixed
  - Correct model initial loading for `tf coco ssd` node 
 
 ### Removed
  - Dependancies from `express` and `compression` npm modules
- - Local load of `coco ssd` model - will come back on a future release
- - Override messages - will come back on a future release
+ - Override of messages properties - will come back on a future release
 
 
 All notable changes to this project will be documented in this file.

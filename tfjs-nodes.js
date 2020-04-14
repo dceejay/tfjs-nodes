@@ -1,7 +1,8 @@
 module.exports = function (RED) {
   // Common stuff for all nodes
-  var tf = require('@tensorflow/tfjs-node')
-  var fs = require('fs')
+  const tf = require('@tensorflow/tfjs-node')
+  const fs = require('fs')
+  const path = require('path')
   global.fetch = require('node-fetch')
 
   function setNodeStatus (node, status) {
@@ -31,12 +32,14 @@ module.exports = function (RED) {
 
   async function inputNodeHandler (node, msg) {
     try {
+      node.success = false
       if (node.ready) {
         var image = msg.payload
         // If it's a string assume it's a filename
         if (typeof image === 'string') { image = fs.readFileSync(image) }
         var results = await node.inferImage(image)
         setNodeStatus(node, 'modelReady')
+        node.success = true
         return results
       } else {
         node.error('model is not ready')
@@ -50,21 +53,38 @@ module.exports = function (RED) {
   // Specific implementations for each of the nodes
   function tensorflowPredict (config) {
     RED.nodes.createNode(this, config)
+    this.mode = config.mode
     this.modelUrl = config.modelUrl
+    this.localModel = config.localModel
     this.threshold = config.threshold
 
     var node = this
 
-    async function loadModel (modelUrl) {
+    async function loadModel () {
       setNodeStatus(node, 'modelLoading')
       try {
-        node.model = await tf.loadLayersModel(modelUrl)
-        var shape = node.model.inputs[0].shape
-        shape.shift()
-        // node.log('input model shape: ' + shape)
-        shape.unshift(1)
-        node.model.predict(tf.zeros(shape)).dispose()
-        node.shape = shape
+        node.ready = false
+        if (node.mode === 'online') {
+          if (node.modelUrl === '') {
+            setNodeStatus(node, 'set a New URL')
+            return
+          } else {
+            node.model = await tf.loadLayersModel(node.modelUrl)
+            var shape = node.model.inputs[0].shape
+            shape.shift()
+            // node.log('input model shape: ' + shape)
+            shape.unshift(1)
+            node.model.predict(tf.zeros(shape)).dispose()
+            node.shape = shape
+          }
+        } else {
+          setNodeStatus(node, 'mode not supported')
+          node.ready = false
+          return
+          // var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
+          // var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
+          // node.model = await mobilenet.load({ modelUrl: modelUrl })
+        }
         node.ready = true
         setNodeStatus(node, 'modelReady')
       } catch (error) {
@@ -90,33 +110,50 @@ module.exports = function (RED) {
       return results
     }
 
-    loadModel(node.modelUrl)
+    loadModel()
 
     node.on('input', function (msg) {
       inputNodeHandler(node, msg).then(
         function (results) {
-          msg.payload = results[0]
-          msg.argMax = results[1]
+          if (node.success) {
+            msg.payload = results[0]
+            msg.argMax = results[1]
+            node.send(msg)
+          }
         })
-      node.send(msg)
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
   function tensorflowMobilenet (config) {
-    var mobilenet = require('@tensorflow-models/mobilenet')
+    const mobilenet = require('@tensorflow-models/mobilenet')
 
     RED.nodes.createNode(this, config)
+    this.mode = config.mode
     this.modelUrl = config.modelUrl
+    this.localModel = config.localModel
     this.threshold = config.threshold
 
     var node = this
 
-    async function loadModel (modelUrl) {
+    async function loadModel () {
       setNodeStatus(node, 'modelLoading')
       try {
-        node.model = await mobilenet.load()
+        node.ready = false
+        if (node.mode === 'online') {
+          if (node.modelUrl === '') {
+            node.model = await mobilenet.load()
+          } else {
+            node.model = await mobilenet.load({ modelUrl: node.modelUrl })
+          }
+        } else {
+          setNodeStatus(node, 'mode not supported')
+          return
+          // var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
+          // var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
+          // node.model = await mobilenet.load({ modelUrl: modelUrl })
+        }
         node.ready = true
         setNodeStatus(node, 'modelReady')
       } catch (error) {
@@ -133,33 +170,48 @@ module.exports = function (RED) {
       return results
     }
 
-    loadModel(node.modelUrl)
+    loadModel()
 
     node.on('input', function (msg) {
       inputNodeHandler(node, msg).then(
         function (results) {
-          msg.payload = results[0]
+          if (node.success) {
+            msg.payload = results[0]
+            node.send(msg)
+          }
         })
-      node.send(msg)
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
   function tensorflowCocoSsd (config) {
-    var cocoSsd = require('@tensorflow-models/coco-ssd')
+    const cocoSsd = require('@tensorflow-models/coco-ssd')
 
     RED.nodes.createNode(this, config)
+    this.mode = config.mode
     this.modelUrl = config.modelUrl
+    this.localModel = config.localModel
     this.threshold = config.threshold
     this.maxDetections = config.maxDetections
 
     var node = this
 
-    async function loadModel (modelUrl) {
+    async function loadModel () {
       setNodeStatus(node, 'modelLoading')
       try {
-        node.model = await cocoSsd.load()
+        node.ready = false
+        if (node.mode === 'online') {
+          if (node.modelUrl === '') {
+            node.model = await cocoSsd.load()
+          } else {
+            node.model = await cocoSsd.load({ modelUrl: node.modelUrl })
+          }
+        } else {
+          var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
+          var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
+          node.model = await cocoSsd.load({ modelUrl: modelUrl })
+        }
         node.ready = true
         setNodeStatus(node, 'modelReady')
       } catch (error) {
@@ -168,7 +220,7 @@ module.exports = function (RED) {
       }
     }
 
-    loadModel(node.modelUrl)
+    loadModel()
 
     node.inferImage = async function (image) {
       setNodeStatus(node, 'infering')
@@ -177,7 +229,7 @@ module.exports = function (RED) {
       var classes = {}
 
       for (var i = 0; i < results.length; i++) {
-        if (results[i].score < node.threshold) {
+        if (results[i].score < node.threshold / 100) {
           results.splice(i, 1)
           i = i - 1
         }
@@ -190,29 +242,46 @@ module.exports = function (RED) {
     node.on('input', function (msg) {
       inputNodeHandler(node, msg).then(
         function (results) {
-          msg.payload = results[0]
-          msg.classes = results[1]
+          if (node.success) {
+            msg.payload = results[0]
+            msg.classes = results[1]
+            node.send(msg)
+          }
         })
-      node.send(msg)
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
   function tensorflowPosenet (config) {
-    var posenet = require('@tensorflow-models/posenet')
+    const posenet = require('@tensorflow-models/posenet')
 
     RED.nodes.createNode(this, config)
+    this.mode = config.mode
     this.modelUrl = config.modelUrl
+    this.localModel = config.localModel
     this.threshold = config.threshold
     this.maxDetections = config.maxDetections
 
     var node = this
 
-    async function loadModel (modelUrl) {
+    async function loadModel () {
       setNodeStatus(node, 'modelLoading')
       try {
-        node.model = await posenet.load()
+        node.ready = false
+        if (node.mode === 'online') {
+          if (node.modelUrl === '') {
+            node.model = await posenet.load()
+          } else {
+            node.model = await posenet.load({ modelUrl: node.modelUrl })
+          }
+        } else {
+          setNodeStatus(node, 'mode not supported')
+          return
+          // var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
+          // var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
+          // node.model = await posenet.load({ modelUrl: modelUrl })
+        }
         node.ready = true
         setNodeStatus(node, 'modelReady')
       } catch (error) {
@@ -227,7 +296,7 @@ module.exports = function (RED) {
       var poses = await node.model.estimateMultiplePoses(tensorImage, {
         flipHorizontal: false,
         maxDetections: node.maxDetections,
-        scoreThreshold: node.threshold,
+        scoreThreshold: node.threshold / 100,
         nmsRadius: 20
       })
       var results = poses
@@ -241,15 +310,17 @@ module.exports = function (RED) {
       return results
     }
 
-    loadModel(node.modelUrl)
+    loadModel()
 
     node.on('input', function (msg) {
       inputNodeHandler(node, msg).then(
         function (results) {
-          msg.payload = results[0]
-          msg.classes = { person: msg.payload.length }
+          if (node.success) {
+            msg.payload = results[0]
+            msg.classes = { person: msg.payload.length }
+            node.send(msg)
+          }
         })
-      node.send(msg)
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })

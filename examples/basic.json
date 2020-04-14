@@ -1,8 +1,8 @@
 [
     {
-        "id": "bd5aeb08.5fd6a8",
+        "id": "2fa21d2.f944ae2",
         "type": "debug",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -10,14 +10,14 @@
         "tostatus": false,
         "complete": "payload",
         "targetType": "msg",
-        "x": 690,
-        "y": 200,
+        "x": 670,
+        "y": 180,
         "wires": []
     },
     {
-        "id": "682b3c75.350e04",
+        "id": "7c457547.c0f8fc",
         "type": "http request",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "method": "GET",
         "ret": "bin",
@@ -28,21 +28,21 @@
         "proxy": "",
         "authType": "",
         "x": 270,
-        "y": 80,
+        "y": 60,
         "wires": [
             [
-                "7020a565.af0c3c",
-                "e234b150.04de",
-                "44e6ec12.4ed9a4",
-                "e14d3811.b01b08",
-                "ad621261.73e75"
+                "9af6df45.05bc3",
+                "963a11d8.34f348",
+                "9c732e21.0edd38",
+                "3088e8cd.4b3b58",
+                "36d10c67.d54c94"
             ]
         ]
     },
     {
-        "id": "4008baac.96d384",
+        "id": "9202a882.a2037",
         "type": "inject",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "topic": "",
         "payload": "",
@@ -52,17 +52,17 @@
         "once": false,
         "onceDelay": 0.1,
         "x": 120,
-        "y": 80,
+        "y": 60,
         "wires": [
             [
-                "682b3c75.350e04"
+                "7c457547.c0f8fc"
             ]
         ]
     },
     {
-        "id": "74e6fd64.df7a04",
+        "id": "281d6c52.469f5c",
         "type": "debug",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -70,14 +70,14 @@
         "tostatus": false,
         "complete": "payload",
         "targetType": "msg",
-        "x": 690,
-        "y": 260,
+        "x": 670,
+        "y": 240,
         "wires": []
     },
     {
-        "id": "d6513c11.e4b3a",
+        "id": "111913bc.ccc2e4",
         "type": "debug",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -85,14 +85,14 @@
         "tostatus": false,
         "complete": "payload",
         "targetType": "msg",
-        "x": 690,
-        "y": 140,
+        "x": 670,
+        "y": 120,
         "wires": []
     },
     {
-        "id": "c86187f9.430218",
+        "id": "8b210bcf.22d44",
         "type": "debug",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -100,14 +100,14 @@
         "tostatus": false,
         "complete": "payload",
         "targetType": "msg",
-        "x": 690,
-        "y": 80,
+        "x": 670,
+        "y": 60,
         "wires": []
     },
     {
-        "id": "7020a565.af0c3c",
+        "id": "9af6df45.05bc3",
         "type": "image",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
         "width": 160,
         "data": "payload",
@@ -115,67 +115,76 @@
         "thumbnail": false,
         "active": true,
         "x": 500,
-        "y": 320,
+        "y": 300,
         "wires": []
     },
     {
-        "id": "e234b150.04de",
-        "type": "tensorflowPredict",
-        "z": "5d04168c.77247",
-        "name": "",
-        "modelUrl": "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
-        "x": 480,
-        "y": 80,
-        "wires": [
-            [
-                "c86187f9.430218"
-            ]
-        ]
-    },
-    {
-        "id": "ad621261.73e75",
-        "type": "tensorflowPosenet",
-        "z": "5d04168c.77247",
-        "name": "",
-        "model": "",
-        "threshold": 0.5,
-        "maxDetections": 4,
-        "x": 480,
-        "y": 260,
-        "wires": [
-            [
-                "74e6fd64.df7a04"
-            ]
-        ]
-    },
-    {
-        "id": "e14d3811.b01b08",
+        "id": "963a11d8.34f348",
         "type": "tensorflowCocoSsd",
-        "z": "5d04168c.77247",
+        "z": "f14c895.9b795f8",
         "name": "",
-        "model": "",
-        "threshold": 0.5,
+        "mode": "local",
+        "modelUrl": "",
+        "localModel": "coco-ssd",
+        "threshold": 50,
         "maxDetections": 4,
         "x": 490,
-        "y": 200,
+        "y": 180,
         "wires": [
             [
-                "bd5aeb08.5fd6a8"
+                "2fa21d2.f944ae2"
             ]
         ]
     },
     {
-        "id": "44e6ec12.4ed9a4",
-        "type": "tensorflowMobilenet",
-        "z": "5d04168c.77247",
+        "id": "9c732e21.0edd38",
+        "type": "tensorflowPosenet",
+        "z": "f14c895.9b795f8",
         "name": "",
-        "modelUrl": "https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json",
-        "threshold": "",
-        "x": 490,
-        "y": 140,
+        "mode": "online",
+        "modelUrl": "",
+        "localModel": "posenet",
+        "threshold": 50,
+        "maxDetections": 4,
+        "x": 480,
+        "y": 240,
         "wires": [
             [
-                "d6513c11.e4b3a"
+                "281d6c52.469f5c"
+            ]
+        ]
+    },
+    {
+        "id": "3088e8cd.4b3b58",
+        "type": "tensorflowMobilenet",
+        "z": "f14c895.9b795f8",
+        "name": "",
+        "mode": "online",
+        "modelUrl": "",
+        "localModel": "mobilenet",
+        "threshold": 50,
+        "x": 490,
+        "y": 120,
+        "wires": [
+            [
+                "111913bc.ccc2e4"
+            ]
+        ]
+    },
+    {
+        "id": "36d10c67.d54c94",
+        "type": "tensorflowPredict",
+        "z": "f14c895.9b795f8",
+        "name": "",
+        "mode": "online",
+        "modelUrl": "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
+        "localModel": "model1",
+        "threshold": 50,
+        "x": 480,
+        "y": 60,
+        "wires": [
+            [
+                "8b210bcf.22d44"
             ]
         ]
     }
