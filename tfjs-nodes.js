@@ -209,7 +209,7 @@ module.exports = function (RED) {
           }
         } else {
           var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
-          var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
+          var modelUrl = 'file://../../' + url + '/models/' + node.localModel + '/model.json'
           node.model = await cocoSsd.load({ modelUrl: modelUrl })
         }
         node.ready = true
