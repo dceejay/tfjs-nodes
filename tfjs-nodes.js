@@ -204,12 +204,12 @@ module.exports = function (RED) {
       const tensorImage = tf.node.decodeImage(image)
       const classification = await node.model.classify(tensorImage)
 
-      const classificationModified = changeKeyResults(classification)
+      const filteredClassification = filterThreshold(changeKeyResults(classification), params.threshold)
 
       tf.dispose(tensorImage) // Free space
 
       const results = {
-        classification: classificationModified
+        classification: filteredClassification
       }
 
       return results
@@ -273,15 +273,15 @@ module.exports = function (RED) {
       const tensorImage = tf.node.decodeImage(image)
       const detections = await node.model.detect(tensorImage, params.maxDetections)
 
-      const filteredResults = filterThreshold(detections, params.threshold) // Deep copy
-      const classes = countClasses(filteredResults)
+      const filteredDetections = filterThreshold(detections, params.threshold) // Deep copy
+      const classes = countClasses(filteredDetections)
 
       // const filteredResultsModified =
 
       tf.dispose(tensorImage) // Free space
 
       const results = {
-        filteredResults: filteredResults,
+        filteredDetections: filteredDetections,
         classes: classes
       }
 
@@ -302,7 +302,7 @@ module.exports = function (RED) {
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
-            msg.payload = results.filteredResults
+            msg.payload = results.filteredDetections
             msg.classes = results.classes
             node.send(msg)
           }
