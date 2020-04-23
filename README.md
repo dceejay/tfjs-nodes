@@ -12,7 +12,7 @@ You have two options to install the node.
  ```
  npm install node-contrib-tfjs-nodes
  ```
-**Note:** You need to restart `Node-RED` after installation. If installation goes wrong please open a [new issue](https://github.com/bonastreyair/node-red-contrib-teachable-machine/issues).
+**Note:** You need to restart `Node-RED` after installation. If installation goes wrong please open a [new issue](https://github.com/dceejay/tfjs-nodes/issues/new/choose).
 
 ## Overview
 This package contains 4 nodes
