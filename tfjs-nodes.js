@@ -70,7 +70,7 @@ module.exports = function (RED) {
     for (let i = 0; i < results.length; i++) {
       out.push({
         class: results[i].className,
-        score: results[i].probability.toFixed(4)
+        score: results[i].probability
       })
     }
     return out
@@ -391,7 +391,8 @@ module.exports = function (RED) {
             msg.classes = results.classes
             node.send(msg)
           }
-        })
+        }
+      )
     })
 
     node.on('close', function () { setNodeStatus(node, 'close') })
