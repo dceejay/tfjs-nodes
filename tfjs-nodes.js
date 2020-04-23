@@ -3,7 +3,13 @@ module.exports = function (RED) {
     const tf = require('@tensorflow/tfjs-node')
     const fs = require('fs')
     const path = require('path')
+    const express = require("express")
+    const compression = require("compression")
     global.fetch = require('node-fetch')
+
+    RED.httpNode.use(compression());
+    RED.httpNode.use('/coco', express.static(__dirname + '/models/coco-ssd'));
+    RED.httpNode.use('/mobilenet', express.static(__dirname + '/models/mobilenetv1'));
 
     function setNodeStatus (node, status) {
         switch (status) {
@@ -135,10 +141,9 @@ module.exports = function (RED) {
         const mobilenet = require('@tensorflow-models/mobilenet')
 
         RED.nodes.createNode(this, config)
-        this.mode = config.mode
         this.modelUrl = config.modelUrl
-        this.localModel = config.localModel
         this.threshold = config.threshold
+        this.passthru = config.passthru
 
         var node = this
 
@@ -146,18 +151,10 @@ module.exports = function (RED) {
             setNodeStatus(node, 'modelLoading')
             try {
                 node.ready = false
-                if (node.mode === 'online') {
-                    if (node.modelUrl === '') {
-                        node.model = await mobilenet.load()
-                    } else {
-                        node.model = await mobilenet.load({ modelUrl: node.modelUrl })
-                    }
+                if (node.modelUrl === '') {
+                    node.model = await mobilenet.load()
                 } else {
-                    setNodeStatus(node, 'mode not supported')
-                    return
-                    // var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
-                    // var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
-                    // node.model = await mobilenet.load({ modelUrl: modelUrl })
+                    node.model = await mobilenet.load({ modelUrl:node.modelUrl,version:1,alpha:1.0 })
                 }
                 node.ready = true
                 setNodeStatus(node, 'modelReady')
@@ -168,16 +165,26 @@ module.exports = function (RED) {
         }
 
         node.inferImage = async function (image) {
-            setNodeStatus(node, 'infering')
+            //setNodeStatus(node, 'infering')
             var tensorImage = tf.node.decodeImage(image)
             var results = await node.model.classify(tensorImage)
-            results = [results]
-            return results
+            var out = [];
+            for (var i = 0; i < results.length; i++) {
+                if (results[i].probability > node.threshold / 100) {
+                    out.push({ 
+                        class:results[i].className, 
+                        score: Math.round(results[i].probability * 10000)/10000
+                    })
+                }
+            }
+            tf.dispose(tensorImage);
+            return [out]
         }
 
         loadModel()
 
         node.on('input', function (msg) {
+            if (node.passthru === true) { msg.image = msg.payload; }
             inputNodeHandler(node, msg).then(
                 function (results) {
                     if (node.success) {
@@ -194,9 +201,7 @@ module.exports = function (RED) {
         const cocoSsd = require('@tensorflow-models/coco-ssd')
 
         RED.nodes.createNode(this, config)
-        this.mode = config.mode
         this.modelUrl = config.modelUrl
-        this.localModel = config.localModel
         this.threshold = config.threshold
         this.maxDetections = config.maxDetections
         this.passthru = config.passthru
@@ -207,18 +212,11 @@ module.exports = function (RED) {
             setNodeStatus(node, 'modelLoading')
             try {
                 node.ready = false
-                if (node.mode === 'online') {
-                    if (node.modelUrl === '') {
-                        node.model = await cocoSsd.load()
-                    } 
-                    else {
-                        node.model = await cocoSsd.load({ modelUrl: node.modelUrl })
-                    }
-                } else {
-                    //var modelUrl = 'file://' + url + '/models/' + node.localModel + '/model.json'
-                    var modelFile = 'file://models/coco-ssd/model.json'
-                    //node.model = await cocoSsd.load({ modelUrl: modelUrl })
-                    node.model = await cocoSsd.load(modelFile)
+                if (node.modelUrl === '') {
+                    node.model = await cocoSsd.load()
+                } 
+                else {
+                    node.model = await cocoSsd.load({ modelUrl:node.modelUrl })
                 }
                 node.ready = true
                 setNodeStatus(node, 'modelReady')
@@ -231,12 +229,13 @@ module.exports = function (RED) {
         loadModel()
 
         node.inferImage = async function (image) {
-            setNodeStatus(node, 'infering')
+            //setNodeStatus(node, 'infering')
             var tensorImage = tf.node.decodeImage(image)
             var results = await node.model.detect(tensorImage, node.maxDetections)
             var classes = {}
 
             for (var i = 0; i < results.length; i++) {
+                results[i].score = Math.round(results[i].score * 10000)/10000
                 if (results[i].score < node.threshold / 100) {
                     results.splice(i, 1)
                     i = i - 1

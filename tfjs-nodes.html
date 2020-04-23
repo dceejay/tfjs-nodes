@@ -38,35 +38,21 @@
 
 <script type="text/html" data-template-name="tensorflowMobilenet">
     <div class="form-row">
-        <label for="node-input-mode"><i class="fa fa-file"></i> Mode</label>
-        <select style="width: 160px;" type="text" id="node-input-mode">
-            <option value="online" selected> Online</option>
-            <option value="local"> Local</option>
-        </select>
-    </div>
-
-    <div class="node-row-msg-online">
-        <div class="form-row node-row-online">
-            <label for="node-input-modelUrl" style="margin-left: 20px; width: 80px;"><i class="fa fa-globe"></i> New URL</label>
-            <input type="text" id="node-input-modelUrl" placeholder="https://../model.json">
-        </div>
-    </div>  
-
-    <div class="node-row-msg-local">
-        <div class="form-row node-row-local">
-            <label for="node-input-localModel" style="margin-left: 20px; width: 80px;"><i class="fa fa-floppy-o"></i> Model</label>
-                <select style="width: 160px;" type="text" id="node-input-localModel">
-                    <option value="mobilenet" selected> Not supported yet</option>
-                </select>
-        </div>       
+        <label for="node-input-modelUrl"><i class="fa fa-globe"></i> Model Url</label>
+        <input type="text" id="node-input-modelUrl" placeholder="leave blank to load default model from internet">
     </div>
     <div class="form-row node-row-parameters">
         <label for="node-input-parameters"><i class="fa fa-cog"></i> Parameters</label>
         <div class="form-row node-row-threshold">
             <label style="margin-left: 20px; width: 140px;" for="node-input-threshold"><i class="fa fa-signal"></i> Threshold (%)</label>
-            <input type="text" id="node-input-threshold" style="width: 50px;" placeholder="0-100">  <i>(Not supported yet)</i>
+            <input type="text" id="node-input-threshold" style="width: 50px;" placeholder="0-100">
         </div>
-
+    </div>
+    <div class="form-row">
+        <label for="node-input-passthru"><i class="fa fa-picture-o"></i> Image</label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:20px; vertical-align:baseline;">
+        pass original image through as <code>msg.image</code>.
+    </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -75,29 +61,9 @@
 
 <script type="text/html" data-template-name="tensorflowCocoSsd">
     <div class="form-row">
-        <label for="node-input-mode"><i class="fa fa-file"></i> Mode</label>
-        <select style="width: 160px;" type="text" id="node-input-mode">
-            <option value="online" selected> Online</option>
-            <option value="local"> Local</option>
-        </select>
+        <label for="node-input-modelUrl"><i class="fa fa-globe"></i> Model Url</label>
+        <input type="text" id="node-input-modelUrl" placeholder="leave blank to load default model from internet">
     </div>
-
-    <div class="node-row-msg-online">
-        <div class="form-row node-row-online">
-            <label for="node-input-modelUrl" style="margin-left: 20px; width: 80px;"><i class="fa fa-globe"></i> New URL</label>
-            <input type="text" id="node-input-modelUrl" placeholder="leave blank for default">
-        </div>
-    </div>  
-
-    <!-- <div class="node-row-msg-local">
-        <div class="form-row node-row-local">
-            <label for="node-input-localModel" style="margin-left: 20px; width: 80px;"><i class="fa fa-floppy-o"></i> Model</label>
-                <select style="width: 160px;" type="text" id="node-input-localModel">
-                    <option value="coco-ssd" selected> Default</option>
-                </select>
-        </div>       
-    </div> -->
-
     <div class="form-row node-row-parameters">
         <label for="node-input-parameters"><i class="fa fa-cog"></i> Parameters</label>
         <div class="form-row node-row-threshold">
@@ -109,13 +75,11 @@
             <input type="text" id="node-input-maxDetections" style="width: 50px;" placeholder="0-10">
         </div>
     </div>
-
     <div class="form-row">
         <label for="node-input-passthru"><i class="fa fa-picture-o"></i> Image</label>
         <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:20px; vertical-align:baseline;">
         pass original image through as <code>msg.image</code>.
     </div>
-
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -181,15 +145,17 @@
     <h3>Outputs</h3>
       <dl class="message-properties">    
         <dt>payload<span class="property-type">array</span></dt>
-        <dd>Top-3 array with objects containing</dd>
+        <dd>Top-3 array of objects exceeding threshold containing</dd>
         <dd>
           <ul>
-            <li><code>nameClass</code> <i>string</i></li>
-            <li><code>probability</code> <i>float</i></li>
+            <li><code>class</code> <i>string</i></li>
+            <li><code>score</code> <i>float</i></li>
           </ul>
         </dd>
       </dl>
     <h3>Details</h3>
+    <p>The threshold can be overridden dynamically by setting the appropriate msg property.</p>
+    <p>By default the node uses a local copy of the CoCo SSD model - if you leave the field blank it will load the default model from the internet.</p>
 </script>
 
 <script type="text/html" data-help-name="tensorflowCocoSsd">
@@ -218,6 +184,7 @@
       </dl>  
     <h3>Details</h3> 
       <p>Both the configured threshold and maxDetections can be overridden dynamically by setting the appropriate msg property.</p>
+      <p>By default the node uses a local copy of the CoCo SSD model - if you leave the field blank it will load the default model from the internet.</p>
 </script>
 
 <script type="text/html" data-help-name="tensorflowPosenet">
@@ -278,10 +245,9 @@
         category: 'analysis-function',
         defaults: {
             name: { value: '' },
-            mode: { value: 'online' },
-            modelUrl: { value: '' }, // https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json
-            localModel: { value: 'mobilenet' },
-            threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
+            modelUrl: { value: "http://localhost:1880"+RED.settings.httpNodeRoot+"mobilenet/model.json"  }, // https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json
+            threshold: { value: 25, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
+            passthru: { value: false }
         },
         inputs: 1,
         outputs: 1,
@@ -291,11 +257,6 @@
         paletteLabel: 'tf mobilenet',
         oneditprepare: function() {
             $("#node-input-threshold").spinner({ min: 0, max: 100})
-            $("#node-input-mode").on("change", function(e) {
-                var val = $(this).val()
-                $(".node-row-msg-online").toggle(val==="online")
-                $(".node-row-msg-local").toggle(val==="local")
-            })
         }
     })
 </script>
@@ -305,9 +266,7 @@
         category: 'analysis-function',
         defaults: {
             name: { value: '' },
-            mode : { value: 'local' },
-            modelUrl: { value: '' },
-            // localModel: { value: 'coco-ssd' },
+            modelUrl: { value: "http://localhost:1880"+RED.settings.httpNodeRoot+"coco/model.json" },
             threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
             maxDetections: { value: 4, validate: function(v) { return RED.validators.number(v) && (v >= 1) && (v <= 10) }},
             passthru: { value: false }
@@ -321,11 +280,6 @@
         oneditprepare: function() {
             $("#node-input-threshold").spinner({ min: 0, max: 100})
             $("#node-input-maxDetections").spinner({ min: 1, max: 10})
-            $("#node-input-mode").on("change", function(e) {
-                var val = $(this).val()
-                $(".node-row-msg-online").toggle(val==="online")
-                // $(".node-row-msg-local").toggle(val==="local")
-            })
         }
     })
 </script>
