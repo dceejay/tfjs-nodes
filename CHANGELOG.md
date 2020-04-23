@@ -32,6 +32,7 @@ All notable changes to this project will be documented in this file.
  - `Min. Threshold` and `Max. Detections` are now selected from an easier spinner
  - `Min. Threshold` is now defined from 0 to 100 in %
  - Refactor of the variable types whether to use `var`, `let` or `const` 
+ - `@tensorflow-models/coco-ssd` version upgraded to `v2.0.3`
 
 ### Fixed
  - Correct model initial loading for `tf coco ssd` node 

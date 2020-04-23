@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Node-RED nodes that use tensorflow.js for object classification, detection, pose detection, and general model prediction",
     "dependencies": {
-        "@tensorflow-models/coco-ssd": "2.0.2",
+        "@tensorflow-models/coco-ssd": "2.0.3",
         "@tensorflow-models/mobilenet": "2.0.4",
         "@tensorflow-models/posenet": "2.2.1",
         "@tensorflow/tfjs-node": "1.4.0"

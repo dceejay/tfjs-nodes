@@ -2,7 +2,7 @@ module.exports = function (RED) {
   // Common stuff for all nodes
   const tf = require('@tensorflow/tfjs-node')
   const fs = require('fs')
-  const path = require('path')
+  // const path = require('path')
   global.fetch = require('node-fetch')
 
   function setNodeStatus (node, status) {
@@ -124,7 +124,13 @@ module.exports = function (RED) {
       const argMax = tensorResult.argMax(1).dataSync()[0]
       const resultsArray = Array.from(tensorResult.dataSync())
 
-      const results = [resultsArray, argMax]
+      tf.dispose(tensorImage) // Free space
+
+      const results = {
+        resultsArray: resultsArray,
+        argMax: argMax
+      }
+
       return results
     }
 
@@ -136,7 +142,7 @@ module.exports = function (RED) {
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
-            msg.payload = results
+            msg.payload = results.resultsArray
             node.send(msg)
           }
         })
@@ -188,6 +194,8 @@ module.exports = function (RED) {
       const tensorImage = tf.node.decodeImage(image)
       const classification = await node.model.classify(tensorImage)
 
+      tf.dispose(tensorImage) // Free space
+
       const results = {
         classification: classification
       }
@@ -222,9 +230,11 @@ module.exports = function (RED) {
     this.mode = config.mode
     this.modelUrl = config.modelUrl
     this.localModel = config.localModel
+
     this.params = {
       threshold: config.threshold,
-      maxDetections: config.maxDetections
+      maxDetections: config.maxDetections,
+      passthru: config.passthru
     }
 
     var node = this
@@ -242,9 +252,9 @@ module.exports = function (RED) {
             node.model = await cocoSsd.load({ modelUrl: node.modelUrl })
           }
         } else {
-          const url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
-          const modelUrl = 'file://' + url + '/models/' + node.localModel + '/model.json'
-          node.model = await cocoSsd.load({ modelUrl: modelUrl })
+          const modelFile = 'file://models/coco-ssd/model.json'
+          // node.model = await cocoSsd.load({ modelUrl: modelUrl })
+          node.model = await cocoSsd.load(modelFile)
         }
         node.ready = true
         setNodeStatus(node, 'modelReady')
@@ -262,6 +272,8 @@ module.exports = function (RED) {
       const filteredResults = filterThreshold(detections, params.threshold) // Deep copy
       const classes = countClasses(filteredResults)
 
+      tf.dispose(tensorImage) // Free space
+
       const results = {
         filteredResults: filteredResults,
         classes: classes
@@ -271,6 +283,7 @@ module.exports = function (RED) {
     }
 
     node.on('input', function (msg) {
+      if (node.params.passthru === true) { msg.image = msg.payload }
       msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
       msg.maxDetections = parseInt(msg.maxDetections || node.params.maxDetections) // Adds to msg if it doesn't exist yet
 
@@ -342,6 +355,8 @@ module.exports = function (RED) {
 
       const filteredResults = filterThreshold(poses, params.threshold)
 
+      tf.dispose(tensorImage) // Free space
+
       const results = {
         filteredResults: filteredResults,
         classes: filteredResults.length ? { person: filteredResults.length } : {}
@@ -354,6 +369,7 @@ module.exports = function (RED) {
     node.on('input', function (msg) {
       msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
       msg.maxDetections = parseInt(msg.maxDetections || node.params.maxDetections) // Adds to msg if it doesn't exist yet
+      msg.passthru = msg.passthru || node.params.passthru
 
       const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
       dynamicParams.threshold = msg.threshold
