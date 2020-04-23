@@ -30,14 +30,13 @@ module.exports = function (RED) {
     }
   }
 
-  async function inputNodeHandler (node, msg) {
+  async function inputNodeHandler (node, msg, params) {
     try {
       node.success = false
       if (node.ready) {
-        var image = msg.payload
-        // If it's a string assume it's a filename
-        if (typeof image === 'string') { image = fs.readFileSync(image) }
-        var results = await node.inferImage(image)
+        let image = msg.payload
+        if (typeof image === 'string') { image = fs.readFileSync(image) } // If it's a string assume it's a filename
+        const results = await node.inferImage(image, params)
         setNodeStatus(node, 'modelReady')
         node.success = true
         return results
@@ -50,13 +49,31 @@ module.exports = function (RED) {
     }
   }
 
+  function filterThreshold (results, threshold) {
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].score < (threshold / 100)) {
+        results.splice(i, 1)
+        i--
+      }
+    }
+    return results
+  }
+
+  function countClasses (results) {
+    const classes = {}
+    for (let i = 0; i < results.length; i++) {
+      classes[results[i].class] = (classes[results[i].class] || 0) + 1
+    }
+    return classes
+  }
+
   // Specific implementations for each of the nodes
   function tensorflowPredict (config) {
     RED.nodes.createNode(this, config)
     this.mode = config.mode
     this.modelUrl = config.modelUrl
     this.localModel = config.localModel
-    this.threshold = config.threshold
+    this.params = {}
 
     var node = this
 
@@ -70,7 +87,7 @@ module.exports = function (RED) {
             return
           } else {
             node.model = await tf.loadLayersModel(node.modelUrl)
-            var shape = node.model.inputs[0].shape
+            const shape = node.model.inputs[0].shape
             shape.shift()
             // node.log('input model shape: ' + shape)
             shape.unshift(1)
@@ -93,31 +110,33 @@ module.exports = function (RED) {
       }
     }
 
-    node.inferImage = async function (image) {
+    node.inferImage = async function (image, params) {
       setNodeStatus(node, 'infering')
-      var tensorImage = tf.node.decodeImage(image, node.shape[3])
+      let tensorImage = tf.node.decodeImage(image, node.shape[3])
       // Rescale the image to fit the wanted shape
-      var scaledTensorImage = tf.image.resizeBilinear(tensorImage, [node.shape[1], node.shape[2]], true)
-      var offset = tf.scalar(127.5)
+      const scaledTensorImage = tf.image.resizeBilinear(tensorImage, [node.shape[1], node.shape[2]], true)
+      const offset = tf.scalar(127.5)
       // Normalize the image from [0, 255] to [-1, 1].
-      var normalized = scaledTensorImage.sub(offset).div(offset)
+      const normalized = scaledTensorImage.sub(offset).div(offset)
       tensorImage = normalized.reshape(node.shape)
 
-      var tensorResult = node.model.predict(tensorImage)
-      var argMax = tensorResult.argMax(1).dataSync()[0]
-      var results = Array.from(tensorResult.dataSync())
-      results = [results, argMax]
+      const tensorResult = node.model.predict(tensorImage)
+      const argMax = tensorResult.argMax(1).dataSync()[0]
+      const resultsArray = Array.from(tensorResult.dataSync())
+
+      const results = [resultsArray, argMax]
       return results
     }
 
     loadModel()
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg).then(
+      const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
+
+      inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
-            msg.payload = results[0]
-            msg.argMax = results[1]
+            msg.payload = results
             node.send(msg)
           }
         })
@@ -133,7 +152,9 @@ module.exports = function (RED) {
     this.mode = config.mode
     this.modelUrl = config.modelUrl
     this.localModel = config.localModel
-    this.threshold = config.threshold
+    this.params = {
+      threshold: config.threshold
+    }
 
     var node = this
 
@@ -162,21 +183,30 @@ module.exports = function (RED) {
       }
     }
 
-    node.inferImage = async function (image) {
+    node.inferImage = async function (image, params) {
       setNodeStatus(node, 'infering')
-      var tensorImage = tf.node.decodeImage(image)
-      var results = await node.model.classify(tensorImage)
-      results = [results]
+      const tensorImage = tf.node.decodeImage(image)
+      const classification = await node.model.classify(tensorImage)
+
+      const results = {
+        classification: classification
+      }
+
       return results
     }
 
     loadModel()
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg).then(
+      msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
+
+      const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
+      dynamicParams.threshold = msg.threshold
+
+      inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
-            msg.payload = results[0]
+            msg.payload = results.classification
             node.send(msg)
           }
         })
@@ -192,10 +222,14 @@ module.exports = function (RED) {
     this.mode = config.mode
     this.modelUrl = config.modelUrl
     this.localModel = config.localModel
-    this.threshold = config.threshold
-    this.maxDetections = config.maxDetections
+    this.params = {
+      threshold: config.threshold,
+      maxDetections: config.maxDetections
+    }
 
     var node = this
+
+    loadModel()
 
     async function loadModel () {
       setNodeStatus(node, 'modelLoading')
@@ -208,8 +242,8 @@ module.exports = function (RED) {
             node.model = await cocoSsd.load({ modelUrl: node.modelUrl })
           }
         } else {
-          var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
-          var modelUrl = 'file://' + url + '/models/' + node.localModel + '/model.json'
+          const url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
+          const modelUrl = 'file://' + url + '/models/' + node.localModel + '/model.json'
           node.model = await cocoSsd.load({ modelUrl: modelUrl })
         }
         node.ready = true
@@ -220,31 +254,35 @@ module.exports = function (RED) {
       }
     }
 
-    loadModel()
-
-    node.inferImage = async function (image) {
+    node.inferImage = async function (image, params) {
       setNodeStatus(node, 'infering')
-      var tensorImage = tf.node.decodeImage(image)
-      var results = await node.model.detect(tensorImage, node.maxDetections)
-      var classes = {}
+      const tensorImage = tf.node.decodeImage(image)
+      const detections = await node.model.detect(tensorImage, params.maxDetections)
 
-      for (var i = 0; i < results.length; i++) {
-        if (results[i].score < node.threshold / 100) {
-          results.splice(i, 1)
-          i = i - 1
-        }
-        classes[results[i].class] = (classes[results[i].class] || 0) + 1
+      const filteredResults = filterThreshold(detections, params.threshold) // Deep copy
+      const classes = countClasses(filteredResults)
+
+      const results = {
+        filteredResults: filteredResults,
+        classes: classes
       }
-      results = [results, classes]
+
       return results
     }
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg).then(
+      msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
+      msg.maxDetections = parseInt(msg.maxDetections || node.params.maxDetections) // Adds to msg if it doesn't exist yet
+
+      const dynamicParams = JSON.parse(JSON.stringify(node.params))
+      dynamicParams.threshold = msg.threshold
+      dynamicParams.maxDetections = msg.maxDetections
+
+      inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
-            msg.payload = results[0]
-            msg.classes = results[1]
+            msg.payload = results.filteredResults
+            msg.classes = results.classes
             node.send(msg)
           }
         })
@@ -260,8 +298,10 @@ module.exports = function (RED) {
     this.mode = config.mode
     this.modelUrl = config.modelUrl
     this.localModel = config.localModel
-    this.threshold = config.threshold
-    this.maxDetections = config.maxDetections
+    this.params = {
+      threshold: config.threshold,
+      maxDetections: config.maxDetections
+    }
 
     var node = this
 
@@ -290,34 +330,40 @@ module.exports = function (RED) {
       }
     }
 
-    node.inferImage = async function (image) {
+    node.inferImage = async function (image, params) {
       setNodeStatus(node, 'infering')
-      var tensorImage = tf.node.decodeImage(image)
-      var poses = await node.model.estimateMultiplePoses(tensorImage, {
+      const tensorImage = tf.node.decodeImage(image)
+      const poses = await node.model.estimateMultiplePoses(tensorImage, {
         flipHorizontal: false,
-        maxDetections: node.maxDetections,
-        scoreThreshold: node.threshold / 100,
+        maxDetections: params.maxDetections,
+        scoreThreshold: params.threshold / 100,
         nmsRadius: 20
       })
-      var results = poses
-      for (var i = 0; i < poses.length; i++) {
-        if (results[i].score < node.threshold) {
-          results.splice(i, 1)
-          i = i - 1
-        }
+
+      const filteredResults = filterThreshold(poses, params.threshold)
+
+      const results = {
+        filteredResults: filteredResults,
+        classes: filteredResults.length ? { person: filteredResults.length } : {}
       }
-      results = [results]
       return results
     }
 
     loadModel()
 
     node.on('input', function (msg) {
-      inputNodeHandler(node, msg).then(
+      msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
+      msg.maxDetections = parseInt(msg.maxDetections || node.params.maxDetections) // Adds to msg if it doesn't exist yet
+
+      const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
+      dynamicParams.threshold = msg.threshold
+      dynamicParams.maxDetections = msg.maxDetections
+
+      inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
-            msg.payload = results[0]
-            msg.classes = { person: msg.payload.length }
+            msg.payload = results.filteredResults
+            msg.classes = results.classes
             node.send(msg)
           }
         })
