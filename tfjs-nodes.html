@@ -10,7 +10,7 @@
 
     <div class="node-row-msg-online">
         <div class="form-row node-row-online">
-            <label for="node-input-modelUrl" style="margin-left: 20px; width: 80px;"><i class="fa fa-globe"></i> New URL</label>
+            <label for="node-input-modelUrl" style="margin-left: 20px; width: 80px;"><i class="fa fa-globe"></i> URL</label>
             <input type="text" id="node-input-modelUrl" placeholder="https://../model.json">
         </div>
     </div>  
@@ -23,13 +23,18 @@
                 </select>
         </div>       
     </div>
-    <div class="form-row node-row-parameters">
+    <!-- <div class="form-row node-row-parameters">
         <label for="node-input-parameters"><i class="fa fa-cog"></i> Parameters</label>
         <div class="form-row node-row-threshold">
             <label style="margin-left: 20px; width: 140px;" for="node-input-threshold"><i class="fa fa-signal"></i> Threshold (%)</label>
             <input type="text" id="node-input-threshold" style="width: 50px;" placeholder="0-100">  <i>(Not supported yet)</i>
         </div>
-
+    </div> -->
+    <div class="form-row">
+        <label for="node-input-passthru"><i class="fa fa-picture-o"></i> Image</label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:20px; vertical-align:baseline;">
+        pass original image through as <code>msg.image</code>.
+    </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -88,27 +93,8 @@
 
 <script type="text/html" data-template-name="tensorflowPosenet">
     <div class="form-row">
-        <label for="node-input-mode"><i class="fa fa-file"></i> Mode</label>
-        <select style="width: 160px;" type="text" id="node-input-mode">
-            <option value="online" selected> Online</option>
-            <option value="local"> Local</option>
-        </select>
-    </div>
-
-    <div class="node-row-msg-online">
-        <div class="form-row node-row-online">
-            <label for="node-input-modelUrl" style="margin-left: 20px; width: 80px;"><i class="fa fa-globe"></i> New URL</label>
-            <input type="text" id="node-input-modelUrl" placeholder="https://../model.json">
-        </div>
-    </div>  
-
-    <div class="node-row-msg-local">
-        <div class="form-row node-row-local">
-            <label for="node-input-localModel" style="margin-left: 20px; width: 80px;"><i class="fa fa-floppy-o"></i> Model</label>
-                <select style="width: 160px;" type="text" id="node-input-localModel">
-                    <option value="posenet" selected> Not supported yet</option>
-                </select>
-        </div>       
+        <label for="node-input-modelUrl"><i class="fa fa-globe"></i> Model Url</label>
+        <input type="text" id="node-input-modelUrl" placeholder="leave blank to load default model from internet">
     </div>
     <div class="form-row node-row-parameters">
         <label for="node-input-parameters"><i class="fa fa-cog"></i> Parameters</label>
@@ -121,7 +107,11 @@
             <input type="text" id="node-input-maxDetections" style="width: 50px;" placeholder="0-10">
         </div>
     </div>
-
+    <div class="form-row">
+        <label for="node-input-passthru"><i class="fa fa-picture-o"></i> Image</label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:20px; vertical-align:baseline;">
+        pass original image through as <code>msg.image</code>.
+    </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -222,6 +212,7 @@
             modelUrl: { value: 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json', required: true },
             localModel: { value: 'model1' },
             threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
+            passthru: { value: false }
         },
         inputs: 1,
         outputs: 1,
@@ -266,8 +257,6 @@
         category: 'analysis-function',
         defaults: {
             name: { value: '' },
-            mode: { value: 'local' },
-            // localModel: { value: 'coco-ssd' },
             modelUrl: { value: "http://localhost:1880"+RED.settings.httpNodeRoot+"coco/model.json" },
             threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
             maxDetections: { value: 4, validate: function(v) { return RED.validators.number(v) && (v >= 1) && (v <= 10) }},
@@ -291,11 +280,10 @@
         category: 'analysis-function',
         defaults: {
             name: { value: '' },
-            mode: { value: 'online' },
             modelUrl: { value: '' },
-            localModel: { value: 'posenet' },
             threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
-            maxDetections: { value: 4, validate: function(v) { return RED.validators.number(v) && (v >= 1) && (v <= 10) }}
+            maxDetections: { value: 4, validate: function(v) { return RED.validators.number(v) && (v >= 1) && (v <= 10) }},
+            passthru: { value: false }
         },
         inputs: 1,
         outputs: 1,
@@ -306,11 +294,6 @@
         oneditprepare: function() {
             $("#node-input-threshold").spinner({ min: 0, max: 100})
             $("#node-input-maxDetections").spinner({ min: 1, max: 10})
-            $("#node-input-mode").on("change", function(e) {
-                var val = $(this).val()
-                $(".node-row-msg-online").toggle(val==="online")
-                $(".node-row-msg-local").toggle(val==="local")
-            })
         }
     })
 </script>

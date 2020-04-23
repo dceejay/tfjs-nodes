@@ -90,6 +90,7 @@ module.exports = function (RED) {
     this.mode = config.mode
     this.modelUrl = config.modelUrl
     this.localModel = config.localModel
+    this.passthru = config.passthru
     this.params = {}
 
     var node = this
@@ -154,8 +155,8 @@ module.exports = function (RED) {
     loadModel()
 
     node.on('input', function (msg) {
-      const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
-
+      if (node.passthru === true) { msg.image = msg.payload }
+      const dynamicParams = { }
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
@@ -174,10 +175,9 @@ module.exports = function (RED) {
     RED.nodes.createNode(this, config)
     this.mode = config.mode
     this.modelUrl = config.modelUrl
-    this.localModel = config.localModel
+    this.passthru = config.passthru
     this.params = {
-      threshold: config.threshold,
-      passthru: config.passthru
+      threshold: config.threshold
     }
 
     var node = this
@@ -203,7 +203,6 @@ module.exports = function (RED) {
       setNodeStatus(node, 'infering')
       const tensorImage = tf.node.decodeImage(image)
       const classification = await node.model.classify(tensorImage)
-
       const filteredClassification = filterThreshold(changeKeyResults(classification), params.threshold)
 
       tf.dispose(tensorImage) // Free space
@@ -218,11 +217,9 @@ module.exports = function (RED) {
     loadModel()
 
     node.on('input', function (msg) {
-      if (node.params.passthru === true) { msg.image = msg.payload }
+      if (node.passthru === true) { msg.image = msg.payload }
       msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
-
-      const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
-      dynamicParams.threshold = msg.threshold
+      const dynamicParams = { threshold:msg.threshold }
 
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
@@ -236,17 +233,16 @@ module.exports = function (RED) {
     node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
+
   function tensorflowCocoSsd (config) {
     const cocoSsd = require('@tensorflow-models/coco-ssd')
 
     RED.nodes.createNode(this, config)
     this.modelUrl = config.modelUrl
-    this.localModel = config.localModel
-
+    this.passthru = config.passthru
     this.params = {
       threshold: config.threshold,
-      maxDetections: config.maxDetections,
-      passthru: config.passthru
+      maxDetections: config.maxDetections
     }
 
     var node = this
@@ -258,7 +254,7 @@ module.exports = function (RED) {
         if (node.modelUrl === '') {
           node.model = await cocoSsd.load()
         } else {
-          node.model = await cocoSsd.load({ modelUrl: node.modelUrl })
+          node.model = await cocoSsd.load({ modelUrl:node.modelUrl })
         }
         node.ready = true
         setNodeStatus(node, 'modelReady')
@@ -272,10 +268,8 @@ module.exports = function (RED) {
       setNodeStatus(node, 'infering')
       const tensorImage = tf.node.decodeImage(image)
       const detections = await node.model.detect(tensorImage, params.maxDetections)
-
       const filteredDetections = filterThreshold(detections, params.threshold) // Deep copy
       const classes = countClasses(filteredDetections)
-
       // const filteredResultsModified =
 
       tf.dispose(tensorImage) // Free space
@@ -291,13 +285,11 @@ module.exports = function (RED) {
     loadModel()
 
     node.on('input', function (msg) {
-      if (node.params.passthru === true) { msg.image = msg.payload }
+      if (node.passthru === true) { msg.image = msg.payload }
       msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
       msg.maxDetections = parseInt(msg.maxDetections || node.params.maxDetections) // Adds to msg if it doesn't exist yet
 
-      const dynamicParams = JSON.parse(JSON.stringify(node.params))
-      dynamicParams.threshold = msg.threshold
-      dynamicParams.maxDetections = msg.maxDetections
+      const dynamicParams = { threshold:msg.threshold, maxDetections:msg.maxDetections }
 
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
@@ -317,9 +309,8 @@ module.exports = function (RED) {
     const posenet = require('@tensorflow-models/posenet')
 
     RED.nodes.createNode(this, config)
-    this.mode = config.mode
     this.modelUrl = config.modelUrl
-    this.localModel = config.localModel
+    this.passthru = config.passthru
     this.params = {
       threshold: config.threshold,
       maxDetections: config.maxDetections
@@ -331,18 +322,10 @@ module.exports = function (RED) {
       setNodeStatus(node, 'modelLoading')
       try {
         node.ready = false
-        if (node.mode === 'online') {
-          if (node.modelUrl === '') {
-            node.model = await posenet.load()
-          } else {
-            node.model = await posenet.load({ modelUrl: node.modelUrl })
-          }
+        if (node.modelUrl === '') {
+          node.model = await posenet.load()
         } else {
-          setNodeStatus(node, 'mode not supported')
-          return
-          // var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
-          // var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
-          // node.model = await posenet.load({ modelUrl: modelUrl })
+          node.model = await posenet.load({ modelUrl: node.modelUrl })
         }
         node.ready = true
         setNodeStatus(node, 'modelReady')
@@ -376,13 +359,11 @@ module.exports = function (RED) {
     loadModel()
 
     node.on('input', function (msg) {
+      if (node.passthru === true) { msg.image = msg.payload }
       msg.threshold = parseInt(msg.threshold || node.params.threshold) // Adds to msg if it doesn't exist yet
       msg.maxDetections = parseInt(msg.maxDetections || node.params.maxDetections) // Adds to msg if it doesn't exist yet
-      msg.passthru = msg.passthru || node.params.passthru
 
-      const dynamicParams = JSON.parse(JSON.stringify(node.params)) // Deep copy
-      dynamicParams.threshold = msg.threshold
-      dynamicParams.maxDetections = msg.maxDetections
+      const dynamicParams = { threshold:msg.threshold, maxDetections:msg.maxDetections }
 
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
