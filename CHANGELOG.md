@@ -12,9 +12,9 @@ All notable changes to this project will be documented in this file.
  - `google` keyword to `package.json` 
  - New `Parameters` section in configuration
  - Added `Online` and `Local` options for all nodes (`tf coco ssd` is the only supported for now)
- - `.eslintrc.js` file
+ - `.eslintrc.js` file with `Standard JS` reference
  - Override of messages properties (threshold and max. detections)
- - Two functinos to filter and count classes
+ - Two functions to filter and count classes
 
 ### Changed
  - General polish `JavaScript` code across all nodes
