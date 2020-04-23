@@ -2,7 +2,6 @@ module.exports = function (RED) {
   // Common stuff for all nodes
   const tf = require('@tensorflow/tfjs-node')
   const fs = require('fs')
-  // const path = require('path')
   global.fetch = require('node-fetch')
 
   function setNodeStatus (node, status) {

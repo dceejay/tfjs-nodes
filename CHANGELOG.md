@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
  - `.eslintrc.js` file with `Standard JS` reference
  - Override of messages properties (threshold and max. detections)
  - Two functions to filter and count classes
+ - Call of `tf.dispose` to solve possible memory leaks after every inference
 
 ### Changed
  - General polish `JavaScript` code across all nodes

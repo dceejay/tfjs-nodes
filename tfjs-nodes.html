@@ -305,7 +305,7 @@
         category: 'analysis-function',
         defaults: {
             name: { value: '' },
-            mode : { value: 'local' },
+            mode: { value: 'local' },
             modelUrl: { value: '' },
             // localModel: { value: 'coco-ssd' },
             threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
@@ -335,7 +335,7 @@
         category: 'analysis-function',
         defaults: {
             name: { value: '' },
-            mode : { value: 'online' },
+            mode: { value: 'online' },
             modelUrl: { value: '' },
             localModel: { value: 'posenet' },
             threshold: { value: 50, validate: function(v) { return RED.validators.number(v) && (v > 0) && (v < 100) }},
