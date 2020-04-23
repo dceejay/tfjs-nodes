@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
  - New contributor `Yair Bonastre` in `package.json`
  - `google` keyword to `package.json` 
  - New `Parameters` section in configuration
- - Added `Online` and `Local` options for all nodes (`tf coco ssd` is the only supported for now)
+ - Added `Online` and `Local` options for all nodes (`tf coco ssd` and `tf mobilenets` only supported)
  - `.eslintrc.js` file with `Standard JS` reference
  - Override of messages properties (threshold and max. detections)
  - Two functions to filter and count classes
