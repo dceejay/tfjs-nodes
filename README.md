@@ -1,5 +1,5 @@
 # node-red-contrib-tjfs-nodes
-[![platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
+[![Platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
 <br>[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![GitHub license](https://img.shields.io/github/license/dceejay/tfjs-nodes)](https://github.com/dceejay/tfjs-nodes/blob/master/LICENSE)
 

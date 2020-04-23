@@ -4,9 +4,11 @@
     "description": "Node-RED nodes that use tensorflow.js for object classification, detection, pose detection, and general model prediction",
     "dependencies": {
         "@tensorflow/tfjs-node": "1.4.0",
-        "@tensorflow-models/mobilenet": "2.0.4",
         "@tensorflow-models/coco-ssd": "2.0.3",
-        "@tensorflow-models/posenet": "2.2.1"
+        "@tensorflow-models/mobilenet": "2.0.4",
+        "@tensorflow-models/posenet": "2.2.1",
+        "express": "4.17.1",
+        "compression": "1.7.4"
     },
     "repository": {
         "type": "git",

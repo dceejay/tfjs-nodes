@@ -1,24 +1,24 @@
 [
     {
-        "id": "71ca581b.43b028",
+        "id": "bbda5864.53c288",
         "type": "debug",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 730,
-        "y": 220,
+        "complete": "true",
+        "targetType": "full",
+        "x": 670,
+        "y": 380,
         "wires": []
     },
     {
-        "id": "dc42c4c5.932bb8",
+        "id": "3ae3a7ce.3516b8",
         "type": "http request",
-        "z": "f35e896a.5d3f5",
-        "name": "",
+        "z": "cf2bd91e.ad21d8",
+        "name": "random image",
         "method": "GET",
         "ret": "bin",
         "paytoqs": false,
@@ -27,22 +27,22 @@
         "persist": false,
         "proxy": "",
         "authType": "",
-        "x": 310,
-        "y": 100,
+        "x": 280,
+        "y": 260,
         "wires": [
             [
-                "842b26c2.af201",
-                "1eeddb10.85c1a5",
-                "519b0f1b.2806e8",
-                "f8f08eb.572c87",
-                "5f068bbe.74d424"
+                "26495668.9c6a7a",
+                "b1184921.04e888",
+                "f8f4402d.cf88d",
+                "296e4634.70d82a",
+                "23484de6.80fe22"
             ]
         ]
     },
     {
-        "id": "3f3f8b83.1d350c",
+        "id": "a3fff645.e892f8",
         "type": "inject",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "topic": "",
         "payload": "",
@@ -51,140 +51,141 @@
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "x": 160,
-        "y": 100,
+        "x": 120,
+        "y": 260,
         "wires": [
             [
-                "dc42c4c5.932bb8"
+                "3ae3a7ce.3516b8"
             ]
         ]
     },
     {
-        "id": "508abd62.f25b64",
+        "id": "8d415c29.2d40a",
         "type": "debug",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 730,
-        "y": 280,
+        "complete": "true",
+        "targetType": "full",
+        "x": 670,
+        "y": 440,
         "wires": []
     },
     {
-        "id": "34fd0ea0.aa2fda",
+        "id": "7fa11aa2.bfae44",
         "type": "debug",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 730,
-        "y": 160,
+        "complete": "true",
+        "targetType": "full",
+        "x": 670,
+        "y": 320,
         "wires": []
     },
     {
-        "id": "b92d8e8c.ffd64",
+        "id": "5ee24358.a6172c",
         "type": "debug",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 730,
-        "y": 100,
+        "complete": "true",
+        "targetType": "full",
+        "x": 670,
+        "y": 260,
         "wires": []
     },
     {
-        "id": "842b26c2.af201",
+        "id": "b1184921.04e888",
+        "type": "tensorflowPredict",
+        "z": "cf2bd91e.ad21d8",
+        "name": "",
+        "mode": "online",
+        "modelUrl": "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
+        "localModel": "model1",
+        "threshold": 50,
+        "x": 500,
+        "y": 260,
+        "wires": [
+            [
+                "5ee24358.a6172c"
+            ]
+        ]
+    },
+    {
+        "id": "26495668.9c6a7a",
         "type": "image",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "width": 160,
         "data": "payload",
         "dataType": "msg",
         "thumbnail": false,
         "active": true,
-        "x": 540,
-        "y": 340,
+        "outputs": 0,
+        "x": 520,
+        "y": 500,
         "wires": []
     },
     {
-        "id": "1eeddb10.85c1a5",
-        "type": "tensorflowPredict",
-        "z": "f35e896a.5d3f5",
-        "name": "",
-        "mode": "online",
-        "modelUrl": "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
-        "localModel": "model1",
-        "threshold": 50,
-        "x": 520,
-        "y": 100,
-        "wires": [
-            [
-                "b92d8e8c.ffd64"
-            ]
-        ]
-    },
-    {
-        "id": "519b0f1b.2806e8",
+        "id": "f8f4402d.cf88d",
         "type": "tensorflowMobilenet",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "mode": "online",
         "modelUrl": "",
         "localModel": "mobilenet",
         "threshold": 50,
-        "x": 530,
-        "y": 160,
+        "x": 510,
+        "y": 320,
         "wires": [
             [
-                "34fd0ea0.aa2fda"
+                "7fa11aa2.bfae44"
             ]
         ]
     },
     {
-        "id": "f8f08eb.572c87",
+        "id": "296e4634.70d82a",
         "type": "tensorflowCocoSsd",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "mode": "local",
         "modelUrl": "",
-        "localModel": "coco-ssd",
         "threshold": 50,
         "maxDetections": 4,
-        "x": 530,
-        "y": 220,
+        "passthru": false,
+        "x": 510,
+        "y": 380,
         "wires": [
             [
-                "71ca581b.43b028"
+                "bbda5864.53c288"
             ]
         ]
     },
     {
-        "id": "5f068bbe.74d424",
+        "id": "23484de6.80fe22",
         "type": "tensorflowPosenet",
-        "z": "f35e896a.5d3f5",
+        "z": "cf2bd91e.ad21d8",
         "name": "",
         "mode": "online",
         "modelUrl": "",
         "localModel": "posenet",
         "threshold": 50,
         "maxDetections": 4,
-        "x": 520,
-        "y": 280,
+        "x": 500,
+        "y": 440,
         "wires": [
             [
-                "508abd62.f25b64"
+                "8d415c29.2d40a"
             ]
         ]
     }

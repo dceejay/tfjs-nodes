@@ -11,7 +11,11 @@ All notable changes to this project will be documented in this file.
  - New contributor `Yair Bonastre` in `package.json`
  - `google` keyword to `package.json` 
  - New `Parameters` section in configuration
- - Added `Online` and `Local` options for all nodes (`tf coco ssd` is the only supported for now)
+ - Added `Online` and `Local` options for all nodes (`tf coco ssd` and `tf mobilenets` only supported)
+ - `.eslintrc.js` file with `Standard JS` reference
+ - Override of messages properties (threshold and max. detections)
+ - Two functions to filter and count classes
+ - Call of `tf.dispose` to solve possible memory leaks after every inference
 
 ### Changed
  - General polish `JavaScript` code across all nodes
@@ -28,13 +32,11 @@ All notable changes to this project will be documented in this file.
  - Set all used libraries to `const` variables
  - `Min. Threshold` and `Max. Detections` are now selected from an easier spinner
  - `Min. Threshold` is now defined from 0 to 100 in %
+ - Refactor of the variable types whether to use `var`, `let` or `const` 
+ - `@tensorflow-models/coco-ssd` version upgraded to `v2.0.3`
 
 ### Fixed
  - Correct model initial loading for `tf coco ssd` node 
-
-### Removed
- - Dependancies from `express` and `compression` npm modules
- - Override of messages properties - will come back on a future release
 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
