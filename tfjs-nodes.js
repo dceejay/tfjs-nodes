@@ -84,7 +84,8 @@ module.exports = function (RED) {
     return classes
   }
 
-  // Specific implementations for each of the nodes
+
+  // Predict Model
   function tensorflowPredict (config) {
     RED.nodes.createNode(this, config)
     this.mode = config.mode
@@ -113,9 +114,10 @@ module.exports = function (RED) {
             node.shape = shape
           }
         } else {
-          setNodeStatus(node, 'mode not supported')
-          node.ready = false
-          return
+          node.model = await tf.loadLayersModel(node.localModel)
+        //   setNodeStatus(node, 'mode not supported')
+        //   node.ready = false
+        //   return
           // var url = path.join('.node-red', 'node_modules', 'node-red-contrib-tfjs-nodes')
           // var modelUrl = 'file://../' + url + '/models/' + node.localModel + '/model.json'
           // node.model = await mobilenet.load({ modelUrl: modelUrl })
@@ -139,14 +141,14 @@ module.exports = function (RED) {
       tensorImage = normalized.reshape(node.shape)
 
       const tensorResult = node.model.predict(tensorImage)
-      const argMax = tensorResult.argMax(1).dataSync()[0]
+      const indexMax = tensorResult.argMax(1).dataSync()[0]
       const resultsArray = Array.from(tensorResult.dataSync())
 
       tf.dispose(tensorImage) // Free space
 
       const results = {
         resultsArray: resultsArray,
-        argMax: argMax
+        indexMax: indexMax
       }
 
       return results
@@ -160,6 +162,7 @@ module.exports = function (RED) {
       inputNodeHandler(node, msg, dynamicParams).then(
         function (results) {
           if (node.success) {
+            msg.indexMax = results.indexMax
             msg.payload = results.resultsArray
             node.send(msg)
           }
@@ -169,6 +172,8 @@ module.exports = function (RED) {
     node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
+
+  // MobileNet Model
   function tensorflowMobilenet (config) {
     const mobilenet = require('@tensorflow-models/mobilenet')
 
@@ -234,6 +239,7 @@ module.exports = function (RED) {
   }
 
 
+  // CoCo SSD Model
   function tensorflowCocoSsd (config) {
     const cocoSsd = require('@tensorflow-models/coco-ssd')
 
@@ -305,6 +311,8 @@ module.exports = function (RED) {
     node.on('close', function () { setNodeStatus(node, 'close') })
   }
 
+
+  // PoseNet Model
   function tensorflowPosenet (config) {
     const posenet = require('@tensorflow-models/posenet')
 
